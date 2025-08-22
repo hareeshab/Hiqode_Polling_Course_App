@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: worker, namespace: hiqode }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: worker } }
+  template:
+    metadata: { labels: { app: worker } }
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/example/hiqode-worker:latest
+          env:
+            - { name: REDIS_URL, valueFrom: { configMapKeyRef: { name: app-config, key: REDIS_URL } } }
+            - { name: QUEUE_NAME, valueFrom: { configMapKeyRef: { name: app-config, key: QUEUE_NAME } } }
+            - { name: PGHOST, valueFrom: { configMapKeyRef: { name: app-config, key: PGHOST } } }
+            - { name: PGPORT, valueFrom: { configMapKeyRef: { name: app-config, key: PGPORT } } }
+            - { name: PGUSER, valueFrom: { secretKeyRef: { name: app-secrets, key: pguser } } }
+            - { name: PGPASSWORD, valueFrom: { secretKeyRef: { name: app-secrets, key: pgpassword } } }
+            - { name: PGDATABASE, valueFrom: { secretKeyRef: { name: app-secrets, key: pgdatabase } } }

@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${PGDATABASE}
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    ports: ["5432:5432"]
+
+  api:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379
+      PGHOST: postgres
+    depends_on: [redis, postgres]
+    ports: ["8080:8080"]
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker.Dockerfile
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379
+      PGHOST: postgres
+    depends_on: [redis, postgres]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    environment:
+      VITE_API_BASE: /api
+    depends_on: [api]
+    ports: ["80:80"]
+
+volumes:
+  pgdata:
